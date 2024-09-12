@@ -1,4 +1,4 @@
-name: Cloudcore IAC
+name: Suryacloud IAC
 
 on:
     push:
