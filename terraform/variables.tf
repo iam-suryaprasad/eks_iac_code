@@ -1,73 +1,67 @@
-resource "aws_vpc" "vpc" {
-  cidr_block = "10.0.0.0/16"
-
-  tags = {
-    Name = var.vpc-name
-  }
+variable "region" {
+  description = "AWS region"
+  type = string
+  default = "us-east-1"
 }
 
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.vpc.id
-
-  tags = {
-    Name = var.igw-name
-  }
+variable "vpc-name" {
+  description = "VPC Name for our Jumphost server"
+  type = string
+  default = "Jumphost-vpc"
 }
 
-resource "aws_subnet" "public-subnet" {
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "us-east-1a"
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = var.subnet-name
-  }
+variable "igw-name" {
+  description = "Internet Gate Way Name for our Jumphost server"
+  type = string
+  default = "Jumphost-igw"
 }
 
-resource "aws_route_table" "rt" {
-  vpc_id = aws_vpc.vpc.id
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
-  }
-
-  tags = {
-    Name = var.rt-name
-  }
+variable "subnet-name" {
+  description = "Subnet Name for our Jumphost server"
+  type = string
+  default = "Jumphost-subnet"
 }
 
-resource "aws_route_table_association" "rt-association" {
-  route_table_id = aws_route_table.rt.id
-  subnet_id      = aws_subnet.public-subnet.id
+variable "rt-name" {
+  description = "Route Table Name for our Jumphost server"
+  type = string
+  default = "Jumphost-rt"
 }
 
-resource "aws_security_group" "security-group" {
-  vpc_id      = aws_vpc.vpc.id
-  description = "Allowing Jenkins, Sonarqube, SSH Access"
-
-  ingress = [
-    for port in [22, 8080, 9000, 9090, 80] : {
-      description      = "TLS from VPC"
-      from_port        = port
-      to_port          = port
-      protocol         = "tcp"
-      ipv6_cidr_blocks = ["::/0"]
-      self             = false
-      prefix_list_ids  = []
-      security_groups  = []
-      cidr_blocks      = ["0.0.0.0/0"]
-    }
-  ]
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = var.sg-name
-  }
+variable "sg-name" {
+  description = "Security Group for our Jumphost server"
+  type = string
+  default = "Jumphost-sg"
 }
+
+
+variable "iam-role" {
+  description = "IAM Role for the Jumphost Server"
+  type = string
+  default = "Jumphost-iam-role"
+}
+
+variable "ami_id" {
+  description = "AMI ID for the EC2 instance"
+  type        = string
+  default     = "ami-0c7217cdde317cfec" // Replace with the latest AMI ID for your region
+}
+
+variable "instance_type" {
+  description = "EC2 instance type"
+  type        = string
+  default     = "t2.large"
+}
+
+variable "key_name" {
+  description = "EC2 keypair"
+  type        = string
+  default     = "gitopskey"
+}
+
+variable "instance_name" {
+  description = "EC2 Instance name for the jumphost server"
+  type        = string
+  default     = "Jumphost-server"
+}
+# 
