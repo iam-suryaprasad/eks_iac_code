@@ -1,4 +1,4 @@
-name: cloud IAC
+name: Awscloud IAC
 
 on:
     push:
