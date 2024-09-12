@@ -1,4 +1,4 @@
-name: Suryacloud IAC
+name: cloud IAC
 
 on:
     push:
