@@ -1,27 +1,38 @@
-name: Terraform  
+name: Suryacloud IAC Destroy  
 
 on:  
-  workflow_dispatch:  # Trigger this manually or based on your needs  
+  workflow_dispatch:  # Allows manual triggering of the destroy workflow  
+
+env:  
+  # Credentials for deployment to AWS  
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}  
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  
+  # S3 bucket for the terraform state.   
+  BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}  
+  AWS_REGION: us-east-1  
 
 jobs:  
   terraform:  
+    name: "Destroy terraform infrastructure"  
     runs-on: ubuntu-latest  
+    defaults:  
+      run:  
+        shell: bash  
+        working-directory: ./terraform  
     steps:  
-      - name: Checkout  
-        uses: actions/checkout@v2  
+    - name: Checkout source code   
+      uses: actions/checkout@v4  
 
-      - name: Set up Terraform  
-        uses: hashicorp/setup-terraform@v1  
-        with:  
-          terraform_version: 1.1.0  # Specify the Terraform version  
+    - name: Setup Terraform with specified version on the runner  
+      uses: hashicorp/setup-terraform@v3  
 
-      - name: Terraform Init  
-        run: terraform init -backend-config "bucket=$BUCKET_TF_STATE"  
+    - name: Terraform Init  
+      id: init  
+      run: terraform init -backend-config "bucket=$BUCKET_TF_STATE"  
 
-      - name: Terraform Destroy  
-        run: terraform destroy -auto-approve  
-        env:  
-          # Set required environment variables  
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}  
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  
-          BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
+    - name: Terraform Destroy Plan  
+      id: destroy_plan  
+      run: terraform plan -destroy -no-color -input=false -out destroy_planfile  
+
+    - name: Terraform Destroy  
+      run: terraform destroy -auto-approve -input=false destroy_planfile
