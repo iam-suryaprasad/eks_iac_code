@@ -7,7 +7,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "suryacloud11"
+    bucket = "1suryaprasad.xyz"
     key    = "terraform.tfstate"
     region = "us-east-1"
   }
