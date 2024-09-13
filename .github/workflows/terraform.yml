@@ -1,4 +1,4 @@
-name: cloud IAC
+name: Aws infrastructure
 
 on:
     push:
