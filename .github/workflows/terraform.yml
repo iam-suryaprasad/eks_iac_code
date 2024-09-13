@@ -1,4 +1,4 @@
-name: AWS Infrastructure
+name: Aws iac 
 
 on:
   push:
