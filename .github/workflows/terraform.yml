@@ -1,67 +1,71 @@
-name: AWS Infrastructure
+name: AWS Infrastructure Deployment
 
+# Workflow is triggered on push or pull request to the main branch for files in the terraform directory.
 on:
   push:
-    branches: 
+    branches:
       - main
-    paths: 
-      - terraform/**
+    paths:
+      - 'terraform/**'
   pull_request:
-    branches: 
+    branches:
       - main
-    paths: 
-      - terraform/**
+    paths:
+      - 'terraform/**'
 
+# Define environment variables
 env:
-  # Credentials for deployment to AWS
+  AWS_REGION: us-east-1
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  # S3 bucket for the Terraform state.
   BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
-  AWS_REGION: us-east-1
 
 jobs:
   terraform:
-    name: "Apply Terraform Code Changes"
+    name: "Terraform Workflow"
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
         working-directory: ./terraform
+
     steps:
-      # Step 1: Checkout source code
-      - name: Checkout source code
+      # Step 1: Checkout the code from the repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Setup Terraform with specified version on the runner
-      - name: Setup Terraform
+      # Step 2: Set up Terraform
+      - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # Step 3: Initialize Terraform
-      - name: Terraform Init
-        run: terraform init -backend-config="bucket=${{ secrets.BUCKET_TF_STATE }}"
+      # Step 3: Initialize Terraform with the backend configuration
+      - name: Initialize Terraform
+        run: |
+          terraform init \
+          -backend-config="bucket=${{ env.BUCKET_TF_STATE }}" \
+          -backend-config="region=${{ env.AWS_REGION }}"
 
-      # Step 4: Format check (this ensures the code follows Terraform formatting guidelines)
-      - name: Terraform Format
+      # Step 4: Run Terraform format check
+      - name: Check Terraform Formatting
         run: terraform fmt -check
-        continue-on-error: true  # Proceed even if formatting issues are found
+        continue-on-error: true
 
       # Step 5: Validate Terraform configuration
-      - name: Terraform Validate
+      - name: Validate Terraform Configuration
         run: terraform validate
 
-      # Step 6: Plan the changes
-      - name: Terraform Plan
+      # Step 6: Generate Terraform Plan
+      - name: Create Terraform Plan
         id: plan
-        run: terraform plan -no-color -input=false -out=planfile
-        continue-on-error: true  # Allows checking for failure later
+        run: terraform plan -no-color -input=false -out=tfplan
+        continue-on-error: true
 
-      # Step 7: Exit if Terraform Plan fails
-      - name: Terraform Plan Status
+      # Step 7: Check Plan Status (exit if plan fails)
+      - name: Verify Plan Status
         if: failure()
         run: exit 1
 
-      # Step 8: Apply changes only on push to the main branch
-      - name: Terraform Apply
+      # Step 8: Apply Terraform changes (only on push to main branch)
+      - name: Apply Terraform Changes
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve -input=false -parallelism=1 planfile
+        run: terraform apply -auto-approve -input=false tfplan
